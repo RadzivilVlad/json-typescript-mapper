@@ -202,7 +202,7 @@ export function deserialize<T extends IGenericObject>(Clazz: {new(): T}, json: I
  * @returns {any} an object ready to be serialized to JSON
  */
 export function serialize(instance: any): any {
-
+    console.log('enter serialize')
     if (!isTargetType(instance, 'object') || isArrayOrArrayClass(instance)) {
         return instance;
     }

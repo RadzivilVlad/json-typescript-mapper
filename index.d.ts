@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 /**
  * provide interface to indicate the object is allowed to be traversed
  *
