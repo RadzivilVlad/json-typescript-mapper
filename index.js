@@ -157,7 +157,7 @@ exports.deserialize = deserialize;
  * @returns {any} an object ready to be serialized to JSON
  */
 function serialize(instance) {
-    console.log('enter serialize');
+    console.log('enter serialize shit shit shit ----klknkjnkj');
     if (!utils_1.isTargetType(instance, 'object') || utils_1.isArrayOrArrayClass(instance)) {
         return instance;
     }
