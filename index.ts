@@ -1,6 +1,5 @@
-import 'reflect-metadata';
 import {isTargetType, isPrimitiveOrPrimitiveClass, isArrayOrArrayClass} from './libs/utils';
-
+import 'reflect-metadata'
 /**
  * provide interface to indicate the object is allowed to be traversed
  *
@@ -202,16 +201,20 @@ export function deserialize<T extends IGenericObject>(Clazz: {new(): T}, json: I
  * @returns {any} an object ready to be serialized to JSON
  */
 export function serialize(instance: any): any {
-    console.log('enter serialize shit shit shit ----klknkjnkj')
+    console.log('enter serialize shit____adcvsdvadfvadf__')
     if (!isTargetType(instance, 'object') || isArrayOrArrayClass(instance)) {
         return instance;
     }
 
     const obj: any = {};
-    Object.keys(instance).forEach(key => {
+    console.log(instance)
+    for (let key in instance) {
+        console.log(key)
+        console.log(Object.getOwnPropertyNames(instance[key]))
         const metadata = getJsonProperty(instance, key);
+        console.log(metadata)
         obj[metadata && metadata.name ? metadata.name : key] = serializeProperty(metadata, instance[key]);
-    });
+    };
     return obj;
 }
 

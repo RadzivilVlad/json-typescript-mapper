@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-require("reflect-metadata");
 var utils_1 = require("./libs/utils");
+require("reflect-metadata");
 /**
  * Decorator variable name
  *
@@ -157,15 +157,20 @@ exports.deserialize = deserialize;
  * @returns {any} an object ready to be serialized to JSON
  */
 function serialize(instance) {
-    console.log('enter serialize shit shit shit ----klknkjnkj');
+    console.log('enter serialize shit____adcvsdvadfvadf__');
     if (!utils_1.isTargetType(instance, 'object') || utils_1.isArrayOrArrayClass(instance)) {
         return instance;
     }
     var obj = {};
-    Object.keys(instance).forEach(function (key) {
+    console.log(instance);
+    for (var key in instance) {
+        console.log(key);
+        console.log(Object.getOwnPropertyNames(instance[key]));
         var metadata = getJsonProperty(instance, key);
+        console.log(metadata);
         obj[metadata && metadata.name ? metadata.name : key] = serializeProperty(metadata, instance[key]);
-    });
+    }
+    ;
     return obj;
 }
 exports.serialize = serialize;
