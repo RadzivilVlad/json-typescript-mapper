@@ -1,9 +1,6 @@
 {
   "name": "json-typescript-mapper",
-  "version": "1.1.3",
-  "typescript": {
-    "definition": "index.d.ts"
-  },
+  "version": "0.0.1",
   "dependencies": {
     "reflect-metadata": "0.1.12"
   },
@@ -27,7 +24,7 @@
   "main": "dist/src/index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jf3096/json-typescript-mapper.git"
+    "url": "git@git.dreamhost.com:dreamhost/microservices/npm-packages/json-typescript-mapper.git"
   },
   "keywords": [
     "json-mapper",
@@ -37,12 +34,7 @@
     "api-mapper",
     "api-adapter"
   ],
-  "author": "Ailun She",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/jf3096/json-typescript-mapper/issues"
-  },
-  "homepage": "https://github.com/jf3096/json-typescript-mapper#readme",
+  "license": "GNU",
   "nodemonConfig": {
     "verbose": false,
     "exec": "yarn run build",
