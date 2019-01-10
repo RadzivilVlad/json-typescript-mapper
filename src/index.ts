@@ -62,35 +62,13 @@ class DecoratorMetaData<T> {
  * @property {IDecoratorMetaData<T>|string} metadata, encapsulate it to DecoratorMetaData for standard use
  * @return {(target:Object, targetKey:string | symbol)=> void} decorator function
  */
-// export function JsonProperty2<T>(target?: any, metadata?: IDecoratorMetaData<T>|string, value?: any): (target: Object, targetKey: string | symbol) => void {
-//     let decoratorMetaData: IDecoratorMetaData<T>;
 
-//     if (isTargetType(metadata, 'string')) {
-//         decoratorMetaData = new DecoratorMetaData<T>(metadata as string);
-//     }
-//     else if (isTargetType(metadata, 'object')) {
-//         decoratorMetaData = metadata as IDecoratorMetaData<T>;
-//     }
-//     else {
-//         throw new Error('index.ts: meta data in Json property is undefined. meta data: ' + metadata)
-//     }
-
-//     return Reflect.defineMetadata(decoratorMetaData, value, target, JSON_META_DATA_KEY);
-// }
-// export function JsonProperty(options: any): PropertyDecorator {
-//     console.log('entered new JsonProperty')
-//     return (target: object, propertyKey: string) => {
-//         let columns: string[] = Reflect.getMetadata(options, target.constructor) || [];
-//         columns.push(propertyKey);
-//         Reflect.defineMetadata(options, columns, target.constructor);
-//     }
-// }
 export const JsonProperty = (options: String): PropertyDecorator => {
     return (target, property) => {
       var classConstructor = target.constructor;
-      const metadata = Reflect.getMetadata(JSON_META_DATA_KEY, classConstructor) || {};
-      metadata[property] = options;
-      Reflect.defineMetadata(JSON_META_DATA_KEY, metadata, classConstructor);
+      const metadata = Reflect.getMetadata(property, classConstructor) || {};
+      metadata[JSON_META_DATA_KEY] = options;
+      Reflect.defineMetadata(property, metadata, classConstructor);
     };
 };
 
@@ -117,12 +95,7 @@ function getClazz<T>(target: T, propertyKey: string): {new(): T} {
  * @return {IDecoratorMetaData<T>} Obtain target property decorator meta data
  */
 function getJsonProperty<T>(target: any, propertyKey: string): IDecoratorMetaData<T> {
-    return Reflect.getMetadata(JSON_META_DATA_KEY, target, propertyKey);
-}
-
-function getJsonProperty2(target: any, propertyKey: string) {
-    let data = Reflect.getOwnMetadata(JSON_META_DATA_KEY, target)
-    return data[propertyKey];
+    return Reflect.getOwnMetadata(propertyKey, target);
 }
 
 /**
@@ -197,15 +170,16 @@ export function deserialize<T extends IGenericObject>(Clazz: {new(): T}, json: I
         /**
          * get decoratorMetaData, structure: { name?:string, clazz?:{ new():T } }
          */
-        let decoratorMetaData = getJsonProperty(instance, key);
+        let decoratorMetaData = getJsonProperty(Clazz, key);
 
         /**
          * pass value to instance
          */
         if (decoratorMetaData && decoratorMetaData.customConverter) {
-            instance[key] =  decoratorMetaData.customConverter.fromJson(json[decoratorMetaData.name || key]);
+            instance[key] = decoratorMetaData.customConverter.fromJson(json[decoratorMetaData[JSON_META_DATA_KEY] || key]);
         } else {
-            instance[key] = decoratorMetaData ? mapFromJson(decoratorMetaData, instance, json, key) : json[key];
+            instance[key] = decoratorMetaData ? json[decoratorMetaData[JSON_META_DATA_KEY]] :
+                mapFromJson(decoratorMetaData, instance, json, decoratorMetaData[JSON_META_DATA_KEY]);
         }
 
     });
@@ -222,7 +196,6 @@ export function deserialize<T extends IGenericObject>(Clazz: {new(): T}, json: I
  * @returns {any} an object ready to be serialized to JSON
  */
 export function serialize(instance: any, model?: any ): any {
-    console.log('enter serialize shit____adcvsdvadfvadf__')
     if (!isTargetType(instance, 'object') || isArrayOrArrayClass(instance)) {
         return instance;
     }
@@ -230,11 +203,11 @@ export function serialize(instance: any, model?: any ): any {
     const obj: any = {};
 
     Object.keys(instance).forEach((key) => {
-        const metadata = model ? getJsonProperty2(model, key) : getJsonProperty(instance, key)
-        // console.log(metadata)
-        obj[metadata] = instance[key];
+        const metadata = getJsonProperty(model, key)
+        if (metadata && metadata[JSON_META_DATA_KEY]) {
+            obj[ metadata[JSON_META_DATA_KEY] ] = serializeProperty(metadata, instance[key], model);
+        }
     });
-    // console.log(obj)
     return obj;
 }
 
@@ -245,7 +218,7 @@ export function serialize(instance: any, model?: any ): any {
  * @param prop
  * @returns {any}
  */
-function serializeProperty(metadata: IDecoratorMetaData<any>, prop: any): any {
+function serializeProperty(metadata: IDecoratorMetaData<any>, prop: any, model?: any): any {
 
     if (!metadata || metadata.excludeToJson === true) {
         return;
@@ -260,7 +233,7 @@ function serializeProperty(metadata: IDecoratorMetaData<any>, prop: any): any {
     }
 
     if (isArrayOrArrayClass(prop)) {
-        return prop.map((propItem: any) => serialize(propItem));
+        return prop.map((propItem: any) => serialize(propItem, model));
     }
 
     return serialize(prop);

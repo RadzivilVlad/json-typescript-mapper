@@ -29,33 +29,12 @@ class DecoratorMetaData {
  * @property {IDecoratorMetaData<T>|string} metadata, encapsulate it to DecoratorMetaData for standard use
  * @return {(target:Object, targetKey:string | symbol)=> void} decorator function
  */
-// export function JsonProperty2<T>(target?: any, metadata?: IDecoratorMetaData<T>|string, value?: any): (target: Object, targetKey: string | symbol) => void {
-//     let decoratorMetaData: IDecoratorMetaData<T>;
-//     if (isTargetType(metadata, 'string')) {
-//         decoratorMetaData = new DecoratorMetaData<T>(metadata as string);
-//     }
-//     else if (isTargetType(metadata, 'object')) {
-//         decoratorMetaData = metadata as IDecoratorMetaData<T>;
-//     }
-//     else {
-//         throw new Error('index.ts: meta data in Json property is undefined. meta data: ' + metadata)
-//     }
-//     return Reflect.defineMetadata(decoratorMetaData, value, target, JSON_META_DATA_KEY);
-// }
-// export function JsonProperty(options: any): PropertyDecorator {
-//     console.log('entered new JsonProperty')
-//     return (target: object, propertyKey: string) => {
-//         let columns: string[] = Reflect.getMetadata(options, target.constructor) || [];
-//         columns.push(propertyKey);
-//         Reflect.defineMetadata(options, columns, target.constructor);
-//     }
-// }
 exports.JsonProperty = (options) => {
     return (target, property) => {
         var classConstructor = target.constructor;
-        const metadata = Reflect.getMetadata(JSON_META_DATA_KEY, classConstructor) || {};
-        metadata[property] = options;
-        Reflect.defineMetadata(JSON_META_DATA_KEY, metadata, classConstructor);
+        const metadata = Reflect.getMetadata(property, classConstructor) || {};
+        metadata[JSON_META_DATA_KEY] = options;
+        Reflect.defineMetadata(property, metadata, classConstructor);
     };
 };
 /**
@@ -79,11 +58,7 @@ function getClazz(target, propertyKey) {
  * @return {IDecoratorMetaData<T>} Obtain target property decorator meta data
  */
 function getJsonProperty(target, propertyKey) {
-    return Reflect.getMetadata(JSON_META_DATA_KEY, target, propertyKey);
-}
-function getJsonProperty2(target, propertyKey) {
-    let data = Reflect.getOwnMetadata(JSON_META_DATA_KEY, target);
-    return data[propertyKey];
+    return Reflect.getOwnMetadata(propertyKey, target);
 }
 /**
  * hasAnyNullOrUndefined
@@ -149,15 +124,16 @@ function deserialize(Clazz, json) {
         /**
          * get decoratorMetaData, structure: { name?:string, clazz?:{ new():T } }
          */
-        let decoratorMetaData = getJsonProperty(instance, key);
+        let decoratorMetaData = getJsonProperty(Clazz, key);
         /**
          * pass value to instance
          */
         if (decoratorMetaData && decoratorMetaData.customConverter) {
-            instance[key] = decoratorMetaData.customConverter.fromJson(json[decoratorMetaData.name || key]);
+            instance[key] = decoratorMetaData.customConverter.fromJson(json[decoratorMetaData[JSON_META_DATA_KEY] || key]);
         }
         else {
-            instance[key] = decoratorMetaData ? mapFromJson(decoratorMetaData, instance, json, key) : json[key];
+            instance[key] = decoratorMetaData ? json[decoratorMetaData[JSON_META_DATA_KEY]] :
+                mapFromJson(decoratorMetaData, instance, json, decoratorMetaData[JSON_META_DATA_KEY]);
         }
     });
     return instance;
@@ -172,17 +148,16 @@ exports.deserialize = deserialize;
  * @returns {any} an object ready to be serialized to JSON
  */
 function serialize(instance, model) {
-    console.log('enter serialize shit____adcvsdvadfvadf__');
     if (!utils_1.isTargetType(instance, 'object') || utils_1.isArrayOrArrayClass(instance)) {
         return instance;
     }
     const obj = {};
     Object.keys(instance).forEach((key) => {
-        const metadata = model ? getJsonProperty2(model, key) : getJsonProperty(instance, key);
-        // console.log(metadata)
-        obj[metadata] = instance[key];
+        const metadata = getJsonProperty(model, key);
+        if (metadata && metadata[JSON_META_DATA_KEY]) {
+            obj[metadata[JSON_META_DATA_KEY]] = serializeProperty(metadata, instance[key], model);
+        }
     });
-    // console.log(obj)
     return obj;
 }
 exports.serialize = serialize;
@@ -193,7 +168,7 @@ exports.serialize = serialize;
  * @param prop
  * @returns {any}
  */
-function serializeProperty(metadata, prop) {
+function serializeProperty(metadata, prop, model) {
     if (!metadata || metadata.excludeToJson === true) {
         return;
     }
@@ -204,7 +179,7 @@ function serializeProperty(metadata, prop) {
         return prop;
     }
     if (utils_1.isArrayOrArrayClass(prop)) {
-        return prop.map((propItem) => serialize(propItem));
+        return prop.map((propItem) => serialize(propItem, model));
     }
     return serialize(prop);
 }
