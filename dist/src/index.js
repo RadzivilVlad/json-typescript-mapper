@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var utils_1 = require("./libs/utils");
+const utils_1 = require("./lib/utils");
 require("reflect-metadata");
 /**
  * Decorator variable name
  *
  * @const
  */
-var JSON_META_DATA_KEY = 'JsonProperty';
+const JSON_META_DATA_KEY = "JsonProperty";
 /**
  * DecoratorMetaData
  * Model used for decoration parameters
@@ -16,13 +16,12 @@ var JSON_META_DATA_KEY = 'JsonProperty';
  * @property {string} name, indicate which json property needed to map
  * @property {string} clazz, if the target is not primitive type, map it to corresponding class
  */
-var DecoratorMetaData = /** @class */ (function () {
-    function DecoratorMetaData(name, clazz) {
+class DecoratorMetaData {
+    constructor(name, clazz) {
         this.name = name;
         this.clazz = clazz;
     }
-    return DecoratorMetaData;
-}());
+}
 /**
  * JsonProperty
  *
@@ -30,20 +29,35 @@ var DecoratorMetaData = /** @class */ (function () {
  * @property {IDecoratorMetaData<T>|string} metadata, encapsulate it to DecoratorMetaData for standard use
  * @return {(target:Object, targetKey:string | symbol)=> void} decorator function
  */
-function JsonProperty(metadata) {
-    var decoratorMetaData;
-    if (utils_1.isTargetType(metadata, 'string')) {
-        decoratorMetaData = new DecoratorMetaData(metadata);
-    }
-    else if (utils_1.isTargetType(metadata, 'object')) {
-        decoratorMetaData = metadata;
-    }
-    else {
-        throw new Error('index.ts: meta data in Json property is undefined. meta data: ' + metadata);
-    }
-    return Reflect.metadata(JSON_META_DATA_KEY, decoratorMetaData);
-}
-exports.JsonProperty = JsonProperty;
+// export function JsonProperty2<T>(target?: any, metadata?: IDecoratorMetaData<T>|string, value?: any): (target: Object, targetKey: string | symbol) => void {
+//     let decoratorMetaData: IDecoratorMetaData<T>;
+//     if (isTargetType(metadata, 'string')) {
+//         decoratorMetaData = new DecoratorMetaData<T>(metadata as string);
+//     }
+//     else if (isTargetType(metadata, 'object')) {
+//         decoratorMetaData = metadata as IDecoratorMetaData<T>;
+//     }
+//     else {
+//         throw new Error('index.ts: meta data in Json property is undefined. meta data: ' + metadata)
+//     }
+//     return Reflect.defineMetadata(decoratorMetaData, value, target, JSON_META_DATA_KEY);
+// }
+// export function JsonProperty(options: any): PropertyDecorator {
+//     console.log('entered new JsonProperty')
+//     return (target: object, propertyKey: string) => {
+//         let columns: string[] = Reflect.getMetadata(options, target.constructor) || [];
+//         columns.push(propertyKey);
+//         Reflect.defineMetadata(options, columns, target.constructor);
+//     }
+// }
+exports.JsonProperty = (options) => {
+    return (target, property) => {
+        var classConstructor = target.constructor;
+        const metadata = Reflect.getMetadata(JSON_META_DATA_KEY, classConstructor) || {};
+        metadata[property] = options;
+        Reflect.defineMetadata(JSON_META_DATA_KEY, metadata, classConstructor);
+    };
+};
 /**
  * getClazz
  *
@@ -67,6 +81,10 @@ function getClazz(target, propertyKey) {
 function getJsonProperty(target, propertyKey) {
     return Reflect.getMetadata(JSON_META_DATA_KEY, target, propertyKey);
 }
+function getJsonProperty2(target, propertyKey) {
+    let data = Reflect.getOwnMetadata(JSON_META_DATA_KEY, target);
+    return data[propertyKey];
+}
 /**
  * hasAnyNullOrUndefined
  *
@@ -74,25 +92,21 @@ function getJsonProperty(target, propertyKey) {
  * @property {...args:any[]} any arguments
  * @return {IDecoratorMetaData<T>} check if any arguments is null or undefined
  */
-function hasAnyNullOrUndefined() {
-    var args = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        args[_i] = arguments[_i];
-    }
-    return args.some(function (arg) { return arg === null || arg === undefined; });
+function hasAnyNullOrUndefined(...args) {
+    return args.some((arg) => arg === null || arg === undefined);
 }
 function mapFromJson(decoratorMetadata, instance, json, key) {
     /**
      * if decorator name is not found, use target property key as decorator name. It means mapping it directly
      */
-    var decoratorName = decoratorMetadata.name || key;
-    var innerJson = json ? json[decoratorName] : undefined;
-    var clazz = getClazz(instance, key);
+    let decoratorName = decoratorMetadata.name || key;
+    let innerJson = json ? json[decoratorName] : undefined;
+    let clazz = getClazz(instance, key);
     if (utils_1.isArrayOrArrayClass(clazz)) {
-        var metadata_1 = getJsonProperty(instance, key);
-        if (metadata_1 && metadata_1.clazz || utils_1.isPrimitiveOrPrimitiveClass(clazz)) {
+        let metadata = getJsonProperty(instance, key);
+        if (metadata && metadata.clazz || utils_1.isPrimitiveOrPrimitiveClass(clazz)) {
             if (innerJson && utils_1.isArrayOrArrayClass(innerJson)) {
-                return innerJson.map(function (item) { return deserialize(metadata_1.clazz, item); });
+                return innerJson.map((item) => deserialize(metadata.clazz, item));
             }
             return;
         }
@@ -130,12 +144,12 @@ function deserialize(Clazz, json) {
     /**
      * init root class to contain json
      */
-    var instance = new Clazz();
-    Object.keys(instance).forEach(function (key) {
+    let instance = new Clazz();
+    Object.keys(instance).forEach((key) => {
         /**
          * get decoratorMetaData, structure: { name?:string, clazz?:{ new():T } }
          */
-        var decoratorMetaData = getJsonProperty(instance, key);
+        let decoratorMetaData = getJsonProperty(instance, key);
         /**
          * pass value to instance
          */
@@ -153,24 +167,22 @@ exports.deserialize = deserialize;
  * Serialize: Creates a ready-for-json-serialization object from the provided model instance.
  * Only @JsonProperty decorated properties in the model instance are processed.
  *
+ * @param model an instance of a model class
  * @param instance an instance of a model class
  * @returns {any} an object ready to be serialized to JSON
  */
-function serialize(instance) {
+function serialize(instance, model) {
     console.log('enter serialize shit____adcvsdvadfvadf__');
     if (!utils_1.isTargetType(instance, 'object') || utils_1.isArrayOrArrayClass(instance)) {
         return instance;
     }
-    var obj = {};
-    console.log(instance);
-    for (var key in instance) {
-        console.log(key);
-        console.log(Object.getOwnPropertyNames(instance[key]));
-        var metadata = getJsonProperty(instance, key);
-        console.log(metadata);
-        obj[metadata && metadata.name ? metadata.name : key] = serializeProperty(metadata, instance[key]);
-    }
-    ;
+    const obj = {};
+    Object.keys(instance).forEach((key) => {
+        const metadata = model ? getJsonProperty2(model, key) : getJsonProperty(instance, key);
+        // console.log(metadata)
+        obj[metadata] = instance[key];
+    });
+    // console.log(obj)
     return obj;
 }
 exports.serialize = serialize;
@@ -192,7 +204,7 @@ function serializeProperty(metadata, prop) {
         return prop;
     }
     if (utils_1.isArrayOrArrayClass(prop)) {
-        return prop.map(function (propItem) { return serialize(propItem); });
+        return prop.map((propItem) => serialize(propItem));
     }
     return serialize(prop);
 }

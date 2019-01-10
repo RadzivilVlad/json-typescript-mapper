@@ -1,13 +1,27 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es5",
+    "moduleResolution": "node",
+    "declaration": true,
+    "esModuleInterop": true,
+    "pretty": true,
     "sourceMap": true,
-    "experimentalDecorators": true,
+    "target": "es6",
+    "outDir": "dist",
+    "rootDir": ".",
     "emitDecoratorMetadata": true,
-    "noImplicitAny": true,
-    "types": ["reflect-metadata"]
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "types": ["reflect-metadata", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    }
   },
+  "include": [
+    "./src"
+  ],
   "exclude": [
     "node_modules"
   ]

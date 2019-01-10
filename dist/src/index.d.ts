@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 /**
  * provide interface to indicate the object is allowed to be traversed
  *
@@ -38,7 +39,7 @@ export interface IDecoratorMetaData<T> {
  * @property {IDecoratorMetaData<T>|string} metadata, encapsulate it to DecoratorMetaData for standard use
  * @return {(target:Object, targetKey:string | symbol)=> void} decorator function
  */
-export declare function JsonProperty<T>(metadata?: IDecoratorMetaData<T> | string): (target: Object, targetKey: string | symbol) => void;
+export declare const JsonProperty: (options: String) => PropertyDecorator;
 /**
  * deserialize
  *
@@ -55,7 +56,8 @@ export declare function deserialize<T extends IGenericObject>(Clazz: {
  * Serialize: Creates a ready-for-json-serialization object from the provided model instance.
  * Only @JsonProperty decorated properties in the model instance are processed.
  *
+ * @param model an instance of a model class
  * @param instance an instance of a model class
  * @returns {any} an object ready to be serialized to JSON
  */
-export declare function serialize(instance: any): any;
+export declare function serialize(instance: any, model?: any): any;
